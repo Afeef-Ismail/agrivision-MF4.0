@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriVision — AI Crop Intelligence</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header>
+    <span class="logo">🌿</span>
+    <div>
+        <h1>AgriVision</h1>
+        <div class="tagline">AI Crop Intelligence for Indian Farmers</div>
+    </div>
+</header>
+
+<!-- ========== MAIN LAYOUT ========== -->
+<div class="main-container">
+
+    <!-- ===== LEFT PANEL: Upload & Settings ===== -->
+    <div class="card upload-panel">
+        <h2>📷 Upload Leaf Image</h2>
+
+        <!-- Drag-and-drop upload area -->
+        <div class="upload-area" id="upload-area">
+            <span class="upload-icon">🍃</span>
+            <p><strong>Click to upload</strong> or drag & drop</p>
+            <span>JPG, PNG — max 10MB</span>
+        </div>
+
+        <!-- Hidden real file input triggered by clicking the area above -->
+        <input type="file" id="file-input" accept="image/*">
+
+        <!-- Image preview shown after upload -->
+        <img id="image-preview" alt="Uploaded leaf">
+
+        <!-- GPS Status Banner — shown after analysis if image has EXIF GPS data -->
+        <div id="gps-banner" class="hidden" style="margin-top:10px; padding:8px 14px; border-radius:8px; font-size:0.88rem; font-weight:500; line-height:1.4;"></div>
+
+        <!-- Crop Type -->
+        <div class="form-group">
+            <label for="crop-type">🌱 Crop Type</label>
+            <select id="crop-type">
+                <option value="Tomato">Tomato</option>
+                <option value="Apple">Apple</option>
+                <option value="Grape">Grape</option>
+            </select>
+        </div>
+
+        <!-- Location for weather -->
+        <div class="form-group">
+            <label for="location">📍 Farm Location</label>
+            <input type="text" id="location" placeholder="e.g. Mangalore, Karnataka" value="Mangalore, Karnataka">
+        </div>
+
+        <!-- Language for voice output -->
+        <div class="form-group">
+            <label for="language">🔊 Voice Language</label>
+            <select id="language">
+                <option value="Bengali">Bengali (বাংলা)</option>
+                <option value="English" selected>English</option>
+                <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+                <option value="Hindi">Hindi (हिंदी)</option>
+                <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+                <option value="Malayalam">Malayalam (മലയാളം)</option>
+                <option value="Marathi">Marathi (मराठी)</option>
+                <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
+                <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+                <option value="Tamil">Tamil (தமிழ்)</option>
+                <option value="Telugu">Telugu (తెలుగు)</option>
+            </select>
+        </div>
+
+        <!-- Organic / Chemical Treatment Toggle -->
+        <label id="treatment-mode-label" style="font-size:0.95rem; font-weight:600; color:#333; display:block; margin-bottom:8px;">
+            💊 Treatment Mode
+        </label>
+        <div class="toggle-group">
+            <button class="toggle-btn" id="btn-organic" onclick="setMode('organic')">🌿 Organic</button>
+            <button class="toggle-btn active" id="btn-chemical" onclick="setMode('chemical')">🧪 Chemical</button>
+        </div>
+
+        <!-- Hidden input to track selected mode -->
+        <input type="hidden" id="mode" value="chemical">
+
+        <!-- Submit -->
+        <button class="analyze-btn" id="analyze-btn" onclick="analyzeImage()" disabled>
+            🔍 Analyze Crop
+        </button>
+    </div>
+
+    <!-- ===== CENTER PANEL: Severity & Prediction Result ===== -->
+    <div class="card result-panel">
+        <h2>🩺 Diagnosis Result</h2>
+
+        <!-- Placeholder shown before any analysis -->
+        <div class="placeholder-state" id="result-placeholder">
+            <span class="placeholder-icon">🌾</span>
+            <p>Upload a leaf photo and click <strong>Analyze Crop</strong> to see the diagnosis here.</p>
+        </div>
+
+        <!-- Loading spinner shown during API call -->
+        <div class="loading hidden" id="result-loading">
+            <div class="spinner"></div>
+            <p>Analyzing your crop...</p>
+        </div>
+
+        <!-- Error state -->
+        <div class="error-state hidden" id="result-error">
+            <span class="error-icon">⚠️</span>
+            <p id="error-message">Something went wrong.</p>
+        </div>
+
+        <!-- Main result shown after successful analysis -->
+        <div class="severity-display hidden" id="result-content">
+            <!-- Traffic light circle — colored by JS based on severity -->
+            <div class="traffic-light" id="traffic-light"></div>
+
+            <!-- Disease name -->
+            <div class="disease-name" id="disease-name">—</div>
+
+            <!-- Confidence percentage -->
+            <div class="confidence-badge" id="confidence-badge">—</div>
+
+            <!-- Moderate confidence warning for real-world images -->
+            <div id="confidence-warning" class="hidden" style="margin-top:8px; padding:8px 12px; background:#fff8e1; border:1px solid #f9a825; border-radius:6px; font-size:0.83rem; color:#795548; line-height:1.4;"></div>
+
+            <!-- Severity label (Low / Moderate / High / Healthy) -->
+            <div class="severity-label" id="severity-label">—</div>
+        </div>
+    </div>
+
+    <!-- ===== RIGHT PANEL: LLM Recommendation ===== -->
+    <div class="card recommendation-panel">
+        <h2>📋 Treatment Recommendation</h2>
+
+        <!-- Placeholder before analysis -->
+        <div class="placeholder-rec" id="rec-placeholder">
+            Analysis results will appear here after you upload an image.
+        </div>
+
+        <!-- Recommendation content populated by JS -->
+        <div class="hidden" id="rec-content">
+
+            <!-- Immediate Actions -->
+            <div class="rec-section">
+                <h3>⚡ Immediate Actions</h3>
+                <ul id="immediate-actions"></ul>
+            </div>
+
+            <!-- Treatment -->
+            <div class="rec-section">
+                <h3>💊 Treatment</h3>
+                <ul id="treatment-list"></ul>
+            </div>
+
+            <!-- Recovery Time -->
+            <div class="rec-section">
+                <h3>⏱ Recovery Time</h3>
+                <p class="recovery-time" id="recovery-time">—</p>
+            </div>
+
+            <!-- Preventive Measures -->
+            <div class="rec-section">
+                <h3>🛡 Prevention</h3>
+                <ul id="preventive-measures"></ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== WEATHER CARD ===== -->
+    <div class="card weather-panel hidden" id="weather-panel">
+        <h2>🌤 Spray Timing Advisor</h2>
+        <div class="weather-card">
+            <!-- Weather stats -->
+            <div class="weather-stats">
+                <div class="weather-stat">
+                    <div class="stat-value" id="w-temp">—</div>
+                    <div class="stat-label">Temp °C</div>
+                </div>
+                <div class="weather-stat">
+                    <div class="stat-value" id="w-humidity">—</div>
+                    <div class="stat-label">Humidity %</div>
+                </div>
+                <div class="weather-stat">
+                    <div class="stat-value" id="w-wind">—</div>
+                    <div class="stat-label">Wind km/h</div>
+                </div>
+                <div class="weather-stat">
+                    <div class="stat-value" id="w-desc" style="font-size:0.9rem;">—</div>
+                    <div class="stat-label">Condition</div>
+                </div>
+            </div>
+
+            <!-- Spray advice text -->
+            <div class="spray-advice safe" id="spray-advice">—</div>
+        </div>
+    </div>
+
+    <!-- ===== NEIGHBOURING CROP RISK BANNER ===== -->
+    <div class="risk-banner hidden" id="risk-banner">
+        <span class="risk-icon">⚠️</span>
+        <p id="risk-text">—</p>
+    </div>
+
+    <!-- ===== AUDIO PLAYER ===== -->
+    <div class="card audio-panel">
+        <h2>🔊 Voice Advisory</h2>
+        <div class="audio-player-wrap">
+            <!-- Placeholder shown before audio is generated -->
+            <p class="audio-placeholder" id="audio-placeholder">
+                Voice output will appear here after analysis.
+            </p>
+            <!-- Audio player — hidden until audio is ready -->
+            <audio id="audio-player" controls class="hidden"></audio>
+            <span class="audio-label hidden" id="audio-label">Tap play to hear the advisory</span>
+        </div>
+    </div>
+
+</div><!-- end .main-container -->
+
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+    // ---- UI Translations ----
+    // All static labels for every supported language.
+    // When the farmer changes the language selector, applyLanguage() updates the DOM.
+    const TRANSLATIONS = {
+        "English": {
+            uploadTitle:"📷 Upload Leaf Image", clickUpload:"<strong>Click to upload</strong> or drag & drop",
+            cropType:"🌱 Crop Type", farmLocation:"📍 Farm Location", locationPlaceholder:"e.g. Mangalore, Karnataka",
+            voiceLanguage:"🔊 Voice Language", treatmentMode:"💊 Treatment Mode",
+            organic:"🌿 Organic", chemical:"🧪 Chemical",
+            analyzeBtn:"🔍 Analyze Crop", analyzingBtn:"⏳ Analyzing...",
+            diagnosisTitle:"🩺 Diagnosis Result",
+            uploadPrompt:"Upload a leaf photo and click <strong>Analyze Crop</strong> to see the diagnosis here.",
+            analyzingText:"Analyzing your crop...",
+            treatmentTitle:"📋 Treatment Recommendation",
+            recPlaceholder:"Analysis results will appear here after you upload an image.",
+            immediateActions:"⚡ Immediate Actions", treatmentHeading:"💊 Treatment",
+            recoveryTime:"⏱ Recovery Time", prevention:"🛡 Prevention",
+            sprayTiming:"🌤 Spray Timing Advisor", voiceAdvisory:"🔊 Voice Advisory",
+            voicePlaceholder:"Voice output will appear here after analysis.",
+            tapPlay:"Tap play to hear the advisory",
+            confidence:"Confidence", healthy:"Healthy", severity:"Severity",
+            tempLabel:"Temp °C", humidityLabel:"Humidity %", windLabel:"Wind km/h", conditionLabel:"Condition"
+        },
+        "Hindi": {
+            uploadTitle:"📷 पत्ती की फोटो अपलोड करें", clickUpload:"<strong>अपलोड करने के लिए क्लिक करें</strong> या खींचकर छोड़ें",
+            cropType:"🌱 फसल का प्रकार", farmLocation:"📍 खेत का स्थान", locationPlaceholder:"जैसे: मंगलोर, कर्नाटक",
+            voiceLanguage:"🔊 आवाज़ की भाषा", treatmentMode:"💊 उपचार विधि",
+            organic:"🌿 जैविक", chemical:"🧪 रासायनिक",
+            analyzeBtn:"🔍 फसल की जाँच करें", analyzingBtn:"⏳ जाँच हो रही है...",
+            diagnosisTitle:"🩺 निदान परिणाम",
+            uploadPrompt:"पत्ती की फोटो अपलोड करें और देखने के लिए <strong>फसल की जाँच करें</strong> पर क्लिक करें।",
+            analyzingText:"आपकी फसल की जाँच हो रही है...",
+            treatmentTitle:"📋 उपचार की सिफारिश",
+            recPlaceholder:"छवि अपलोड करने के बाद विश्लेषण परिणाम यहाँ दिखाई देंगे।",
+            immediateActions:"⚡ तत्काल कदम", treatmentHeading:"💊 उपचार",
+            recoveryTime:"⏱ ठीक होने का समय", prevention:"🛡 बचाव के उपाय",
+            sprayTiming:"🌤 छिड़काव का सही समय", voiceAdvisory:"🔊 आवाज़ सलाह",
+            voicePlaceholder:"विश्लेषण के बाद आवाज़ यहाँ सुनाई देगी।",
+            tapPlay:"सलाह सुनने के लिए प्ले दबाएं",
+            confidence:"विश्वास", healthy:"स्वस्थ", severity:"गंभीरता",
+            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"हवा km/h", conditionLabel:"मौसम"
+        },
+        "Kannada": {
+            uploadTitle:"📷 ಎಲೆಯ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ", clickUpload:"<strong>ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ</strong> ಅಥವಾ ಎಳೆದು ಬಿಡಿ",
+            cropType:"🌱 ಬೆಳೆಯ ಪ್ರಕಾರ", farmLocation:"📍 ಜಮೀನಿನ ಸ್ಥಳ", locationPlaceholder:"ಉದಾ: ಮಂಗಳೂರು, ಕರ್ನಾಟಕ",
+            voiceLanguage:"🔊 ಧ್ವನಿ ಭಾಷೆ", treatmentMode:"💊 ಚಿಕಿತ್ಸಾ ವಿಧಾನ",
+            organic:"🌿 ಸಾವಯವ", chemical:"🧪 ರಾಸಾಯನಿಕ",
+            analyzeBtn:"🔍 ಬೆಳೆ ವಿಶ್ಲೇಷಿಸಿ", analyzingBtn:"⏳ ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...",
+            diagnosisTitle:"🩺 ರೋಗನಿರ್ಣಯ ಫಲಿತಾಂಶ",
+            uploadPrompt:"ಎಲೆಯ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಮತ್ತು ನೋಡಲು <strong>ಬೆಳೆ ವಿಶ್ಲೇಷಿಸಿ</strong> ಕ್ಲಿಕ್ ಮಾಡಿ.",
+            analyzingText:"ನಿಮ್ಮ ಬೆಳೆ ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...",
+            treatmentTitle:"📋 ಚಿಕಿತ್ಸಾ ಶಿಫಾರಸು",
+            recPlaceholder:"ಚಿತ್ರ ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ನಂತರ ಫಲಿತಾಂಶ ಇಲ್ಲಿ ತೋರಿಸುತ್ತದೆ.",
+            immediateActions:"⚡ ತಕ್ಷಣ ಕ್ರಮ", treatmentHeading:"💊 ಚಿಕಿತ್ಸೆ",
+            recoveryTime:"⏱ ಚೇತರಿಕೆ ಸಮಯ", prevention:"🛡 ತಡೆಗಟ್ಟುವ ಕ್ರಮ",
+            sprayTiming:"🌤 ಸಿಂಪಡಣೆ ಸಮಯ", voiceAdvisory:"🔊 ಧ್ವನಿ ಸಲಹೆ",
+            voicePlaceholder:"ವಿಶ್ಲೇಷಣೆ ನಂತರ ಧ್ವನಿ ಸಲಹೆ ಇಲ್ಲಿ ಬರುತ್ತದೆ.",
+            tapPlay:"ಸಲಹೆ ಕೇಳಲು ಪ್ಲೇ ಒತ್ತಿ",
+            confidence:"ವಿಶ್ವಾಸ", healthy:"ಆರೋಗ್ಯಕರ", severity:"ತೀವ್ರತೆ",
+            tempLabel:"ತಾಪಮಾನ °C", humidityLabel:"ತೇವಾಂಶ %", windLabel:"ಗಾಳಿ km/h", conditionLabel:"ಹವಾಮಾನ"
+        },
+        "Malayalam": {
+            uploadTitle:"📷 ഇല ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക", clickUpload:"<strong>അപ്‌ലോഡ് ചെയ്യാൻ ക്ലിക്ക് ചെയ്യുക</strong> അല്ലെങ്കിൽ വലിച്ചിടുക",
+            cropType:"🌱 വിളയുടെ തരം", farmLocation:"📍 കൃഷിഭൂമിയുടെ സ്ഥലം", locationPlaceholder:"ഉദാ: മംഗളൂരു, കർണാടക",
+            voiceLanguage:"🔊 ശബ്ദ ഭാഷ", treatmentMode:"💊 ചികിത്സാ രീതി",
+            organic:"🌿 ജൈവ", chemical:"🧪 രാസ",
+            analyzeBtn:"🔍 വിള പരിശോധിക്കുക", analyzingBtn:"⏳ പരിശോധിക്കുന്നു...",
+            diagnosisTitle:"🩺 രോഗനിർണ്ണയ ഫലം",
+            uploadPrompt:"ഇലയുടെ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്ത് ഫലം കാണാൻ <strong>വിള പരിശോധിക്കുക</strong> ക്ലിക്ക് ചെയ്യുക.",
+            analyzingText:"നിങ്ങളുടെ വിള പരിശോധിക്കുന്നു...",
+            treatmentTitle:"📋 ചികിത്സാ ശുപാർശ",
+            recPlaceholder:"ഫോട്ടോ അപ്‌ലോഡ് ചെയ്ത ശേഷം ഫലം ഇവിടെ കാണും.",
+            immediateActions:"⚡ ഉടനടി നടപടി", treatmentHeading:"💊 ചികിത്സ",
+            recoveryTime:"⏱ വീണ്ടെടുക്കൽ സമയം", prevention:"🛡 പ്രതിരോധ നടപടി",
+            sprayTiming:"🌤 തളിക്കൽ സമയം", voiceAdvisory:"🔊 ശബ്ദ ഉപദേശം",
+            voicePlaceholder:"പരിശോധനയ്ക്ക് ശേഷം ശബ്ദ ഉപദേശം ഇവിടെ വരും.",
+            tapPlay:"ഉപദേശം കേൾക്കാൻ പ്ലേ അമർത്തുക",
+            confidence:"ആത്മവിശ്വാസം", healthy:"ആരോഗ്യകരം", severity:"കാഠിന്യം",
+            tempLabel:"താപനില °C", humidityLabel:"ആർദ്രത %", windLabel:"കാറ്റ് km/h", conditionLabel:"കാലാവസ്ഥ"
+        },
+        "Marathi": {
+            uploadTitle:"📷 पानाचा फोटो अपलोड करा", clickUpload:"<strong>अपलोड करण्यासाठी क्लिक करा</strong> किंवा ड्रॅग करा",
+            cropType:"🌱 पिकाचा प्रकार", farmLocation:"📍 शेताचे ठिकाण", locationPlaceholder:"उदा: मंगळूर, कर्नाटक",
+            voiceLanguage:"🔊 आवाज भाषा", treatmentMode:"💊 उपचार पद्धती",
+            organic:"🌿 सेंद्रिय", chemical:"🧪 रासायनिक",
+            analyzeBtn:"🔍 पिकाचे विश्लेषण करा", analyzingBtn:"⏳ विश्लेषण होत आहे...",
+            diagnosisTitle:"🩺 निदान निकाल",
+            uploadPrompt:"पानाचा फोटो अपलोड करा आणि पाहण्यासाठी <strong>पिकाचे विश्लेषण करा</strong> वर क्लिक करा.",
+            analyzingText:"तुमच्या पिकाचे विश्लेषण होत आहे...",
+            treatmentTitle:"📋 उपचार शिफारस",
+            recPlaceholder:"फोटो अपलोड केल्यानंतर विश्लेषण निकाल येथे दिसतील.",
+            immediateActions:"⚡ तात्काळ उपाय", treatmentHeading:"💊 उपचार",
+            recoveryTime:"⏱ बरे होण्याचा वेळ", prevention:"🛡 प्रतिबंधात्मक उपाय",
+            sprayTiming:"🌤 फवारणीची वेळ", voiceAdvisory:"🔊 आवाज सल्ला",
+            voicePlaceholder:"विश्लेषणानंतर आवाज सल्ला येथे येईल.",
+            tapPlay:"सल्ला ऐकण्यासाठी प्ले दाबा",
+            confidence:"विश्वास", healthy:"निरोगी", severity:"तीव्रता",
+            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"वारा km/h", conditionLabel:"हवामान"
+        },
+        "Tamil": {
+            uploadTitle:"📷 இலை புகைப்படம் பதிவேற்றவும்", clickUpload:"<strong>பதிவேற்ற கிளிக் செய்யவும்</strong> அல்லது இழுத்து விடவும்",
+            cropType:"🌱 பயிர் வகை", farmLocation:"📍 வயல் இடம்", locationPlaceholder:"எ.கா: மங்களூர், கர்நாடகா",
+            voiceLanguage:"🔊 குரல் மொழி", treatmentMode:"💊 சிகிச்சை முறை",
+            organic:"🌿 இயற்கை", chemical:"🧪 வேதியியல்",
+            analyzeBtn:"🔍 பயிரை பரிசோதிக்கவும்", analyzingBtn:"⏳ பரிசோதிக்கிறது...",
+            diagnosisTitle:"🩺 நோய் கண்டறிதல்",
+            uploadPrompt:"இலையின் புகைப்படத்தை பதிவேற்றி <strong>பயிரை பரிசோதிக்கவும்</strong> என்பதை கிளிக் செய்யவும்.",
+            analyzingText:"உங்கள் பயிர் பரிசோதிக்கப்படுகிறது...",
+            treatmentTitle:"📋 சிகிச்சை பரிந்துரை",
+            recPlaceholder:"படம் பதிவேற்றிய பின் பகுப்பாய்வு முடிவுகள் இங்கே தோன்றும்.",
+            immediateActions:"⚡ உடனடி நடவடிக்கை", treatmentHeading:"💊 சிகிச்சை",
+            recoveryTime:"⏱ குணமடைவு நேரம்", prevention:"🛡 தடுப்பு நடவடிக்கை",
+            sprayTiming:"🌤 தெளிப்பு நேரம்", voiceAdvisory:"🔊 குரல் ஆலோசனை",
+            voicePlaceholder:"பரிசோதனைக்குப் பின் குரல் ஆலோசனை இங்கே வரும்.",
+            tapPlay:"ஆலோசனை கேட்க ப்ளே அழுத்தவும்",
+            confidence:"நம்பகத்தன்மை", healthy:"ஆரோக்கியமானது", severity:"தீவிரம்",
+            tempLabel:"வெப்பநிலை °C", humidityLabel:"ஈரப்பதம் %", windLabel:"காற்று km/h", conditionLabel:"வானிலை"
+        }
+    };
+
+    // Returns translations for the currently selected language (fallback English)
+    function getT() {
+        const lang = document.getElementById("language").value;
+        return TRANSLATIONS[lang] || TRANSLATIONS["English"];
+    }
+
+    // Applies all UI labels for the selected language
+    function applyLanguage(lang) {
+        const t = TRANSLATIONS[lang] || TRANSLATIONS["English"];
+
+        // Panel headings
+        document.querySelector(".upload-panel h2").textContent = t.uploadTitle;
+        document.querySelector(".result-panel h2").textContent = t.diagnosisTitle;
+        document.querySelector(".recommendation-panel h2").textContent = t.treatmentTitle;
+        document.querySelector(".audio-panel h2").textContent = t.voiceAdvisory;
+        const weatherH2 = document.querySelector(".weather-panel h2");
+        if (weatherH2) weatherH2.textContent = t.sprayTiming;
+
+        // Upload area text
+        document.querySelector("#upload-area p").innerHTML = t.clickUpload;
+
+        // Form labels
+        document.querySelector("label[for='crop-type']").textContent = t.cropType;
+        document.querySelector("label[for='location']").textContent = t.farmLocation;
+        document.querySelector("label[for='language']").textContent = t.voiceLanguage;
+        document.getElementById("treatment-mode-label").textContent = t.treatmentMode;
+        document.getElementById("location").placeholder = t.locationPlaceholder;
+
+        // Buttons
+        document.getElementById("btn-organic").textContent = t.organic;
+        document.getElementById("btn-chemical").textContent = t.chemical;
+        const btn = document.getElementById("analyze-btn");
+        if (!btn.textContent.includes("⏳")) btn.textContent = t.analyzeBtn;
+
+        // Placeholder and loading texts
+        document.querySelector("#result-placeholder p").innerHTML = t.uploadPrompt;
+        document.querySelector("#result-loading p").textContent = t.analyzingText;
+        document.getElementById("rec-placeholder").textContent = t.recPlaceholder;
+        document.getElementById("audio-placeholder").textContent = t.voicePlaceholder;
+        document.getElementById("audio-label").textContent = t.tapPlay;
+
+        // Recommendation section headings
+        const recSections = document.querySelectorAll(".rec-section h3");
+        if (recSections.length >= 4) {
+            recSections[0].textContent = t.immediateActions;
+            recSections[1].textContent = t.treatmentHeading;
+            recSections[2].textContent = t.recoveryTime;
+            recSections[3].textContent = t.prevention;
+        }
+
+        // Weather stat labels
+        const statLabels = document.querySelectorAll(".stat-label");
+        if (statLabels.length >= 4) {
+            statLabels[0].textContent = t.tempLabel;
+            statLabels[1].textContent = t.humidityLabel;
+            statLabels[2].textContent = t.windLabel;
+            statLabels[3].textContent = t.conditionLabel;
+        }
+    }
+
+    // Apply translations whenever language selector changes
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("language").addEventListener("change", function () {
+            applyLanguage(this.value);
+        });
+    });
+
+    // Track selected treatment mode ("organic" or "chemical")
+    let selectedMode = "chemical";
+    let selectedFile = null;
+
+    // ---- Treatment Mode Toggle ----
+    function setMode(mode) {
+        selectedMode = mode;
+        document.getElementById("mode").value = mode;
+
+        // Update button appearance
+        document.getElementById("btn-organic").classList.toggle("active", mode === "organic");
+        document.getElementById("btn-chemical").classList.toggle("active", mode === "chemical");
+    }
+
+    // ---- File Upload Handling ----
+
+    // Click on upload area triggers the hidden file input
+    document.getElementById("upload-area").addEventListener("click", function () {
+        document.getElementById("file-input").click();
+    });
+
+    // When a file is chosen via the file picker
+    document.getElementById("file-input").addEventListener("change", function (e) {
+        handleFileSelected(e.target.files[0]);
+    });
+
+    // Drag and drop: highlight the area when dragging over it
+    const uploadArea = document.getElementById("upload-area");
+
+    uploadArea.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        uploadArea.classList.add("drag-over");
+    });
+
+    uploadArea.addEventListener("dragleave", function () {
+        uploadArea.classList.remove("drag-over");
+    });
+
+    uploadArea.addEventListener("drop", function (e) {
+        e.preventDefault();
+        uploadArea.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            handleFileSelected(file);
+        }
+    });
+
+    // Show a preview of the selected image and enable the Analyze button
+    function handleFileSelected(file) {
+        if (!file) return;
+        selectedFile = file;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById("image-preview");
+            preview.src = e.target.result;
+            preview.style.display = "block";
+
+            // Update upload area to show file name
+            uploadArea.querySelector("p").innerHTML = `<strong>${file.name}</strong> selected`;
+        };
+        reader.readAsDataURL(file);
+
+        // Enable the analyze button now that we have a file
+        document.getElementById("analyze-btn").disabled = false;
+    }
+
+    // ---- Main Analysis Function ----
+    async function analyzeImage() {
+        if (!selectedFile) {
+            alert("Please select a leaf image first.");
+            return;
+        }
+
+        // Show loading state
+        showLoading();
+
+        // Build the multipart form data to send to the backend
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        formData.append("crop_type", document.getElementById("crop-type").value);
+        formData.append("location", document.getElementById("location").value || "Mangalore, Karnataka");
+        formData.append("language", document.getElementById("language").value);
+        formData.append("mode", selectedMode);
+
+        try {
+            const response = await fetch("/predict", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                // Show the error message returned by the server
+                showError(data.error || "Analysis failed. Please try again.");
+                return;
+            }
+
+            // Populate all panels with the response data
+            displayResults(data);
+
+        } catch (err) {
+            showError("Could not connect to the server. Make sure it is running.");
+        }
+    }
+
+    // ---- Display Results ----
+    function displayResults(data) {
+        // 1. Traffic light + disease + confidence
+        const light = document.getElementById("traffic-light");
+        const color = data.severity.color;
+        light.className = `traffic-light ${color}`;
+
+        document.getElementById("disease-name").textContent = data.prediction.disease_display;
+        document.getElementById("confidence-badge").textContent =
+            `Confidence: ${data.prediction.confidence}%`;
+
+        // Moderate confidence warning (60–80%)
+        const warnEl = document.getElementById("confidence-warning");
+        if (data.prediction.warning) {
+            warnEl.textContent = "⚠️ " + data.prediction.warning;
+            warnEl.classList.remove("hidden");
+        } else {
+            warnEl.classList.add("hidden");
+        }
+
+        const severityLabel = document.getElementById("severity-label");
+        const sev = data.severity.level || "Healthy";
+        severityLabel.textContent = sev === "None" || !sev ? "Healthy" : `Severity: ${sev}`;
+        severityLabel.className = `severity-label ${color}`;
+
+        // Show result content, hide placeholder and loading
+        document.getElementById("result-placeholder").classList.add("hidden");
+        document.getElementById("result-loading").classList.add("hidden");
+        document.getElementById("result-error").classList.add("hidden");
+        document.getElementById("result-content").classList.remove("hidden");
+
+        // 2. LLM Recommendation
+        const rec = data.recommendation;
+
+        populateList("immediate-actions", rec.immediate_actions || []);
+        populateList("treatment-list", rec.treatment || []);
+        document.getElementById("recovery-time").textContent = rec.recovery_time || "—";
+        populateList("preventive-measures", rec.preventive_measures || []);
+
+        document.getElementById("rec-placeholder").classList.add("hidden");
+        document.getElementById("rec-content").classList.remove("hidden");
+
+        // 3. Weather card
+        const w = data.weather;
+        if (w.temperature !== null) {
+            document.getElementById("w-temp").textContent = `${w.temperature}°`;
+            document.getElementById("w-humidity").textContent = `${w.humidity}%`;
+            document.getElementById("w-wind").textContent = `${w.wind_speed}`;
+            document.getElementById("w-desc").textContent = w.description;
+
+            const adviceEl = document.getElementById("spray-advice");
+            adviceEl.textContent = w.advice;
+            adviceEl.className = `spray-advice ${w.safe_to_spray ? "safe" : "warning"}`;
+
+            document.getElementById("weather-panel").classList.remove("hidden");
+        }
+
+        // 4. Neighbouring crop risk banner
+        const riskBanner = document.getElementById("risk-banner");
+        if (data.neighbouring_risk && data.neighbouring_risk.trim() !== "") {
+            document.getElementById("risk-text").textContent = data.neighbouring_risk;
+            riskBanner.classList.remove("hidden");
+        } else {
+            riskBanner.classList.add("hidden");
+        }
+
+        // 5. GPS status banner
+        const gpsBanner = document.getElementById("gps-banner");
+        if (data.gps_info) {
+            gpsBanner.textContent = data.gps_info;
+            // Green background for confirmed region, yellow for warning
+            if (data.gps_info.startsWith("✅")) {
+                gpsBanner.style.background = "#e8f5e9";
+                gpsBanner.style.border = "1px solid #4caf50";
+                gpsBanner.style.color = "#2e7d32";
+            } else {
+                gpsBanner.style.background = "#fff8e1";
+                gpsBanner.style.border = "1px solid #f9a825";
+                gpsBanner.style.color = "#795548";
+            }
+            gpsBanner.classList.remove("hidden");
+        } else {
+            gpsBanner.classList.add("hidden");
+        }
+
+        // 6. Audio player — autoplay voice advisory
+        const audioUrl = data.audio_url;
+        const audioPlayer = document.getElementById("audio-player");
+        const audioPlaceholder = document.getElementById("audio-placeholder");
+        const audioLabel = document.getElementById("audio-label");
+
+        if (audioUrl) {
+            audioPlayer.src = audioUrl;
+            audioPlayer.classList.remove("hidden");
+            audioLabel.classList.remove("hidden");
+            audioPlaceholder.classList.add("hidden");
+            // Autoplay the advisory for farmers who don't read
+            audioPlayer.play().catch(() => {
+                // Browser may block autoplay — user can still press play manually
+            });
+        }
+    }
+
+    // ---- Helper: populate a <ul> with <li> items ----
+    function populateList(elementId, items) {
+        const ul = document.getElementById(elementId);
+        ul.innerHTML = "";
+        items.forEach(function (item) {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+        });
+    }
+
+    // ---- UI State Helpers ----
+
+    function showLoading() {
+        document.getElementById("result-placeholder").classList.add("hidden");
+        document.getElementById("result-content").classList.add("hidden");
+        document.getElementById("result-error").classList.add("hidden");
+        document.getElementById("result-loading").classList.remove("hidden");
+
+        document.getElementById("rec-placeholder").classList.remove("hidden");
+        document.getElementById("rec-content").classList.add("hidden");
+
+        document.getElementById("weather-panel").classList.add("hidden");
+        document.getElementById("risk-banner").classList.add("hidden");
+
+        document.getElementById("analyze-btn").disabled = true;
+        document.getElementById("analyze-btn").textContent = "⏳ Analyzing...";
+    }
+
+    function showError(message) {
+        document.getElementById("result-loading").classList.add("hidden");
+        document.getElementById("result-content").classList.add("hidden");
+        document.getElementById("result-placeholder").classList.add("hidden");
+        document.getElementById("result-error").classList.remove("hidden");
+
+        document.getElementById("error-message").textContent = message;
+
+        document.getElementById("analyze-btn").disabled = false;
+        document.getElementById("analyze-btn").textContent = "🔍 Analyze Crop";
+    }
+
+    // Re-enable button when loading is done (called from displayResults)
+    document.addEventListener("DOMContentLoaded", function () {
+        // Re-enable button after results are displayed
+        const observer = new MutationObserver(function () {
+            const loading = document.getElementById("result-loading");
+            if (loading.classList.contains("hidden")) {
+                const btn = document.getElementById("analyze-btn");
+                btn.disabled = !selectedFile;
+                btn.textContent = "🔍 Analyze Crop";
+            }
+        });
+
+        observer.observe(document.getElementById("result-loading"), {
+            attributes: true,
+            attributeFilter: ["class"]
+        });
+    });
+</script>
+
+</body>
+</html>

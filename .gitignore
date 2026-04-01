@@ -1,0 +1,43 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Environment
+venv/
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+server.log
+
+# Data and artifacts
+static/uploads/
+static/audio/
+temp/
+
+# Model weights and big files
+model/*.h5
+
+# Setup or deployment scripts that should remain local
+setup.sh
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gemini
+.gemini/
+
+
