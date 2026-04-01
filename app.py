@@ -35,6 +35,38 @@ from voice import generate_voice, LANGUAGE_CODES
 from weather import get_spray_timing
 from gps_validator import get_gps_warning
 
+
+# ---------------------------------------------------------------------------
+# Translation helpers — used to localise the entire JSON response when
+# lang_code != 'en'. Falls back silently to the original English text on
+# any error so the app never crashes due to a translation failure.
+# ---------------------------------------------------------------------------
+def _translate(text: str, lang_code: str) -> str:
+    if not text or not isinstance(text, str) or lang_code == "en":
+        return text
+    try:
+        from deep_translator import GoogleTranslator
+        return GoogleTranslator(source="en", target=lang_code).translate(text)
+    except Exception:
+        return text
+
+
+def _translate_list(items: list, lang_code: str) -> list:
+    return [_translate(item, lang_code) for item in (items or [])]
+
+
+def _translate_recommendation(rec: dict, lang_code: str) -> dict:
+    """Translates all string values in the LLM recommendation dict."""
+    if lang_code == "en":
+        return rec
+    return {
+        "immediate_actions":    _translate_list(rec.get("immediate_actions", []), lang_code),
+        "treatment":            _translate_list(rec.get("treatment", []), lang_code),
+        "recovery_time":        _translate(rec.get("recovery_time", ""), lang_code),
+        "preventive_measures":  _translate_list(rec.get("preventive_measures", []), lang_code),
+        "neighbouring_crop_risk": _translate(rec.get("neighbouring_crop_risk", ""), lang_code),
+    }
+
 # --- App Initialization ---
 app = FastAPI(
     title="AgriVision",
@@ -78,7 +110,7 @@ def startup_event():
         print("[app] ML model loaded. Ready for inference.")
     else:
         print("[app] WARNING: ML model not loaded.")
-        print("[app] Add the model file to: model/best_model.h5")
+        print("[app] Add the model file to: model/agrivision_efficientnetb3_final.h5")
         print("[app] The server is running but /predict will return an error until the model is present.")
 
 
@@ -171,7 +203,7 @@ async def predict_endpoint(
                 status_code=503,
                 content={
                     "success": False,
-                    "error": "Model not loaded yet. Please add model/best_model.h5"
+                    "error": "Model not loaded yet. Please add model/agrivision_efficientnetb3_final.h5"
                 }
             )
 
@@ -187,7 +219,7 @@ async def predict_endpoint(
         # --- Step 3: ML Model Inference ---
         # run_prediction is predict.predict_disease imported with an alias above.
         # The alias prevents this route handler from shadowing the imported function.
-        prediction_result = run_prediction(str(image_path))
+        prediction_result = run_prediction(str(image_path), crop_type)
 
         if not prediction_result["success"]:
             return JSONResponse(
@@ -220,10 +252,10 @@ async def predict_endpoint(
         disease_display = severity_data["display"]
 
         # --- Step 6: Neighbouring Crop Risk ---
+        # Passed as context into the LLM prompt — not returned directly in the response.
         neighbouring_risk = get_neighbouring_risk(class_name)
 
-        # --- Step 7: LLM Recommendation ---
-        # Determine time of day for context-aware advice
+        # --- Step 7: LLM Recommendation (always English, translated below) ---
         hour = datetime.now().hour
         if hour < 12:
             time_of_day = "morning"
@@ -232,7 +264,6 @@ async def predict_endpoint(
         else:
             time_of_day = "evening"
 
-        # Extract crop name from the class key (e.g. "Tomato___Late_blight" → "Tomato")
         crop_from_class = class_name.split("___")[0] if "___" in class_name else crop_type
 
         recommendation = get_recommendation(
@@ -242,13 +273,19 @@ async def predict_endpoint(
             location=location,
             time_of_day=time_of_day,
             mode=mode,
-            language=language     # LLM writes all text values in the farmer's language
+            neighbouring_risk=neighbouring_risk   # feeds disease spread context into the prompt
         )
 
         # --- Step 8: Weather & Spray Timing ---
         # Done BEFORE voice so the translated advice can be spoken in the audio.
         lang_code = LANGUAGE_CODES.get(language, "en")
         weather_data = get_spray_timing(location, lang_code)
+
+        # --- Translate all response text to the farmer's language ---
+        # LLM always returns English; deep-translator localises the response.
+        recommendation = _translate_recommendation(recommendation, lang_code)
+        disease_display_translated = _translate(disease_display, lang_code)
+        gps_info_translated = _translate(gps_info, lang_code) if gps_info else None
 
         # --- Step 9: Voice Output ---
         # Combines disease recommendation + translated weather advice into one MP3.
@@ -276,7 +313,7 @@ async def predict_endpoint(
         return JSONResponse(content={
             "success": True,
             "prediction": {
-                "disease_display": disease_display,
+                "disease_display": disease_display_translated,
                 "confidence": confidence,
                 "warning": prediction_warning    # None or moderate-confidence warning string
             },
@@ -284,11 +321,11 @@ async def predict_endpoint(
                 "color": color,
                 "level": severity          # None for healthy, "Low"/"Moderate"/"High"
             },
-            "recommendation": recommendation,
-            "weather": weather_data,       # full dict, not a pre-formatted string
+            "recommendation": recommendation,  # all text fields translated
+            "weather": weather_data,           # advice already translated by weather.py
             "audio_url": audio_url,
-            "neighbouring_risk": neighbouring_risk,
-            "gps_info": gps_info           # None | "✅ GPS: ..." | "⚠️ GPS Warning: ..."
+            "gps_info": gps_info_translated    # None | "✅ GPS: ..." | "⚠️ GPS Warning: ..."
+            # neighbouring_risk removed from direct response — lives inside recommendation dict
         })
 
     except Exception as e:

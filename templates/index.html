@@ -215,8 +215,10 @@
             <p class="audio-placeholder" id="audio-placeholder">
                 Voice output will appear here after analysis.
             </p>
-            <!-- Audio player — hidden until audio is ready -->
-            <audio id="audio-player" controls class="hidden"></audio>
+            <!-- Seekable audio player — full controls: play/pause, scrub bar, volume -->
+            <audio id="voicePlayer" controls style="width:100%" class="hidden">
+                <source id="voiceSource" src="" type="audio/mpeg">
+            </audio>
             <span class="audio-label hidden" id="audio-label">Tap play to hear the advisory</span>
         </div>
     </div>
@@ -226,6 +228,58 @@
 
 <!-- ========== JAVASCRIPT ========== -->
 <script>
+    // ---- Short display labels for all 11 languages (used in results panel) ----
+    const LABELS = {
+      en:{disease:"Disease",confidence:"Confidence",severity:"Severity",
+          rec:"AI Recommendation",spray:"Spray Timing",
+          upload:"🔍 Analyse Crop",healthy:"Healthy"},
+      hi:{disease:"रोग",confidence:"विश्वास",severity:"गंभीरता",
+          rec:"AI सुझाव",spray:"छिड़काव का समय",
+          upload:"🔍 फसल विश्लेषण",healthy:"स्वस्थ"},
+      pa:{disease:"ਬਿਮਾਰੀ",confidence:"ਭਰੋਸਾ",severity:"ਗੰਭੀਰਤਾ",
+          rec:"AI ਸੁਝਾਅ",spray:"ਛਿੜਕਾਅ ਸਮਾਂ",
+          upload:"🔍 ਫਸਲ ਵਿਸ਼ਲੇਸ਼ਣ",healthy:"ਸਿਹਤਮੰਦ"},
+      gu:{disease:"રોગ",confidence:"વિશ્વાસ",severity:"ગંભીરતા",
+          rec:"AI સૂચન",spray:"છંટકાવ સમય",
+          upload:"🔍 પાક વિશ્લેષણ",healthy:"સ્વસ્થ"},
+      bn:{disease:"রোগ",confidence:"আস্থা",severity:"তীব্রতা",
+          rec:"AI সুপারিশ",spray:"স্প্রে সময়",
+          upload:"🔍 ফসল বিশ্লেষণ",healthy:"সুস্থ"},
+      or:{disease:"ରୋଗ",confidence:"ଆତ୍ମବିଶ୍ୱାସ",severity:"ଗୁରୁତ୍ୱ",
+          rec:"AI ସୁପାରିଶ",spray:"ସ୍ପ୍ରେ ସମୟ",
+          upload:"🔍 ଫସଲ ବିଶ୍ଳେଷଣ",healthy:"ସ୍ୱସ୍ଥ"},
+      te:{disease:"వ్యాధి",confidence:"విశ్వాసం",severity:"తీవ్రత",
+          rec:"AI సిఫార్సు",spray:"స్ప్రే సమయం",
+          upload:"🔍 పంట విశ్లేషణ",healthy:"ఆరోగ్యకరం"},
+      kn:{disease:"ರೋಗ",confidence:"ವಿಶ್ವಾಸ",severity:"ತೀವ್ರತೆ",
+          rec:"AI ಶಿಫಾರಸು",spray:"ಸಿಂಪಡಿಸುವ ಸಮಯ",
+          upload:"🔍 ಬೆಳೆ ವಿಶ್ಲೇಷಣೆ",healthy:"ಆರೋಗ್ಯಕರ"},
+      ml:{disease:"രോഗം",confidence:"ആത്മവിശ്വാസം",severity:"തീവ്രത",
+          rec:"AI ശുപാർശ",spray:"തളിക്കൽ സമയം",
+          upload:"🔍 വിള വിശകലനം",healthy:"ആരോഗ്യകരം"},
+      mr:{disease:"रोग",confidence:"विश्वास",severity:"तीव्रता",
+          rec:"AI शिफारस",spray:"फवारणी वेळ",
+          upload:"🔍 पीक विश्लेषण",healthy:"निरोगी"},
+      ta:{disease:"நோய்",confidence:"நம்பிக்கை",severity:"தீவிரம்",
+          rec:"AI பரிந்துரை",spray:"தெளிக்கும் நேரம்",
+          upload:"🔍 பயிர் பகுப்பாய்வு",healthy:"ஆரோக்கியம்"}
+    };
+
+    // Maps dropdown display value → LABELS key (ISO 639-1 code)
+    const LANG_CODE_MAP = {
+      "Bengali":"bn","English":"en","Gujarati":"gu","Hindi":"hi",
+      "Kannada":"kn","Malayalam":"ml","Marathi":"mr","Odia":"or",
+      "Punjabi":"pa","Tamil":"ta","Telugu":"te"
+    };
+
+    function getLangCode() {
+        return LANG_CODE_MAP[document.getElementById("language").value] || "en";
+    }
+
+    function getL() {
+        return LABELS[getLangCode()] || LABELS["en"];
+    }
+
     // ---- UI Translations ----
     // All static labels for every supported language.
     // When the farmer changes the language selector, applyLanguage() updates the DOM.
@@ -410,6 +464,10 @@
     document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("language").addEventListener("change", function () {
             applyLanguage(this.value);
+            // Update analyse button text to selected language
+            const L = LABELS[LANG_CODE_MAP[this.value]] || LABELS["en"];
+            const btn = document.getElementById("analyze-btn");
+            if (!btn.disabled) btn.textContent = L.upload;
         });
     });
 
@@ -527,9 +585,11 @@
         const color = data.severity.color;
         light.className = `traffic-light ${color}`;
 
+        const L = getL();
+
         document.getElementById("disease-name").textContent = data.prediction.disease_display;
         document.getElementById("confidence-badge").textContent =
-            `Confidence: ${data.prediction.confidence}%`;
+            `${L.confidence}: ${data.prediction.confidence}%`;
 
         // Moderate confidence warning (60–80%)
         const warnEl = document.getElementById("confidence-warning");
@@ -542,7 +602,7 @@
 
         const severityLabel = document.getElementById("severity-label");
         const sev = data.severity.level || "Healthy";
-        severityLabel.textContent = sev === "None" || !sev ? "Healthy" : `Severity: ${sev}`;
+        severityLabel.textContent = sev === "None" || !sev ? L.healthy : `${L.severity}: ${sev}`;
         severityLabel.className = `severity-label ${color}`;
 
         // Show result content, hide placeholder and loading
@@ -577,10 +637,11 @@
             document.getElementById("weather-panel").classList.remove("hidden");
         }
 
-        // 4. Neighbouring crop risk banner
+        // 4. Neighbouring crop risk banner — sourced from LLM recommendation dict
         const riskBanner = document.getElementById("risk-banner");
-        if (data.neighbouring_risk && data.neighbouring_risk.trim() !== "") {
-            document.getElementById("risk-text").textContent = data.neighbouring_risk;
+        const riskText = data.recommendation?.neighbouring_crop_risk;
+        if (riskText && riskText.trim() !== "") {
+            document.getElementById("risk-text").textContent = riskText;
             riskBanner.classList.remove("hidden");
         } else {
             riskBanner.classList.add("hidden");
@@ -605,19 +666,21 @@
             gpsBanner.classList.add("hidden");
         }
 
-        // 6. Audio player — autoplay voice advisory
+        // 6. Audio player — seekable player with autoplay
         const audioUrl = data.audio_url;
-        const audioPlayer = document.getElementById("audio-player");
+        const voicePlayer = document.getElementById("voicePlayer");
+        const voiceSource = document.getElementById("voiceSource");
         const audioPlaceholder = document.getElementById("audio-placeholder");
         const audioLabel = document.getElementById("audio-label");
 
         if (audioUrl) {
-            audioPlayer.src = audioUrl;
-            audioPlayer.classList.remove("hidden");
+            voiceSource.src = audioUrl;
+            voicePlayer.load();
+            voicePlayer.classList.remove("hidden");
             audioLabel.classList.remove("hidden");
             audioPlaceholder.classList.add("hidden");
             // Autoplay the advisory for farmers who don't read
-            audioPlayer.play().catch(() => {
+            voicePlayer.play().catch(() => {
                 // Browser may block autoplay — user can still press play manually
             });
         }

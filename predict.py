@@ -192,9 +192,21 @@ def predict_with_tta(model, image_path: str, n: int = 5) -> np.ndarray:
     return np.mean(all_preds, axis=0)
 
 
-def predict_disease(image_path: str) -> dict:
+# Maps crop_type dropdown value → expected class_name prefix
+_CROP_PREFIXES = {
+    "Apple":  "Apple___",
+    "Grape":  "Grape___",
+    "Tomato": "Tomato___",
+}
+
+
+def predict_disease(image_path: str, crop_type: str = None) -> dict:
     """
     Runs EfficientNet-B3 inference on a leaf image and returns a structured result.
+
+    If crop_type is provided, validates that the top prediction belongs to that
+    crop. Returns a clear error dict if the class prefix does not match — this
+    prevents a "Tomato" user from getting an Apple disease result.
 
     Imported by app.py as `run_prediction` to avoid a naming collision with the
     FastAPI route handler that is also called predict_disease in that file.
@@ -205,6 +217,7 @@ def predict_disease(image_path: str) -> dict:
             "disease": str  — readable name e.g. "Tomato Early Blight",
             "confidence": float — percentage e.g. 87.34,
             "class_name": str  — raw key e.g. "Tomato___Early_blight",
+            "warning": str | None,
             "error": str | None
         }
     """
@@ -227,6 +240,23 @@ def predict_disease(image_path: str) -> dict:
         confidence = float(avg_preds[predicted_index]) * 100.0
 
         class_name = _class_names.get(predicted_index, "Unknown")
+
+        # Crop type mismatch: reject if the predicted class belongs to a different crop
+        if crop_type and crop_type in _CROP_PREFIXES:
+            expected_prefix = _CROP_PREFIXES[crop_type]
+            if not class_name.startswith(expected_prefix):
+                return {
+                    "success": False,
+                    "disease": None,
+                    "confidence": round(confidence, 2),
+                    "class_name": class_name,
+                    "warning": None,
+                    "error": (
+                        "Detected disease does not match selected crop type. "
+                        "Please verify your crop selection or try a clearer image."
+                    )
+                }
+
         readable_disease = (
             class_name.replace("___", " ").replace("_", " ")
             if class_name != "Unknown"

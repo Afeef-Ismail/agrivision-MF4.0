@@ -15,7 +15,13 @@
 
 import io
 import os
+import re
 from gtts import gTTS
+
+# gTTS language codes confirmed to work; others fall back to English.
+# Punjabi ('pa') falls back to Hindi ('hi') if unsupported.
+# Odia ('or') falls back to English if unsupported.
+GTTS_SUPPORTED = ['en', 'hi', 'pa', 'gu', 'bn', 'or', 'te', 'kn', 'ml', 'mr', 'ta']
 
 # pydub is used for inter-segment silence. Requires ffmpeg to be installed.
 # Gracefully degraded: if not available, the app still generates audio —
@@ -161,6 +167,45 @@ VOICE_FRAMING = {
 }
 
 
+def _try_gtts(text: str, lang_code: str) -> tuple:
+    """
+    Generates gTTS audio with language fallbacks for less-supported languages.
+    - Punjabi ('pa'): tries 'pa', falls back to 'hi'
+    - Odia ('or'): tries 'or', falls back to 'en'
+    - Others: tries the given lang_code, falls back to 'en'
+
+    Returns (io.BytesIO with mp3 bytes, effective_lang_code) or (None, None) on total failure.
+    """
+    fallback_chains = {
+        "pa": ["pa", "hi"],
+        "or": ["or", "en"],
+    }
+    codes = fallback_chains.get(lang_code, [lang_code, "en"])
+    for code in codes:
+        try:
+            buf = io.BytesIO()
+            gTTS(text=text, lang=code, slow=False).write_to_fp(buf)
+            buf.seek(0)
+            return buf, code
+        except Exception:
+            continue
+    return None, None
+
+
+def _flatten_segments(segments: list) -> list:
+    """
+    Further splits each segment on sentence boundaries ('. ', '.\n', '! ', '? ')
+    so every individual sentence becomes its own audio clip with a pause after it.
+    Preserves ending punctuation on each piece.
+    """
+    result = []
+    for seg in segments:
+        # Split after terminal punctuation followed by whitespace
+        parts = re.split(r'(?<=[.!?])\s+', seg.strip())
+        result.extend(p.strip() for p in parts if p.strip())
+    return result
+
+
 def _build_voice_segments(recommendation: dict, disease_display: str,
                           severity: str, lang_code: str) -> list:
     """
@@ -233,15 +278,15 @@ def _generate_with_pydub(segments: list, lang_code: str, output_path: str) -> tu
         (True, output_path) on success
         (False, error_message) on failure
     """
-    silence = AudioSegment.silent(duration=500)
+    silence = AudioSegment.silent(duration=600)  # 600ms pause between sentences
     combined = None
 
     for segment in segments:
         if not segment.strip():
             continue
-        buf = io.BytesIO()
-        gTTS(text=segment, lang=lang_code, slow=False).write_to_fp(buf)
-        buf.seek(0)
+        buf, _ = _try_gtts(segment, lang_code)
+        if buf is None:
+            continue
         seg_audio = AudioSegment.from_mp3(buf)
         combined = seg_audio if combined is None else combined + silence + seg_audio
 
@@ -282,6 +327,11 @@ def generate_voice(recommendation: dict, disease_display: str, severity: str,
         (False, error_message) on failure
     """
     lang_code = LANGUAGE_CODES.get(language, "en")
+
+    # Safety check: fall back to English if lang_code not supported by gTTS
+    if lang_code not in GTTS_SUPPORTED:
+        lang_code = "en"
+
     segments = _build_voice_segments(recommendation, disease_display, severity, lang_code)
 
     # Append translated weather advice after the disease recommendation
@@ -290,21 +340,27 @@ def generate_voice(recommendation: dict, disease_display: str, severity: str,
         segments.append(f.get("weather_intro", "Weather advisory."))
         segments.append(weather_advice)
 
-    # Preferred path: pydub with per-segment silence
+    # Sentence-level split: each sentence becomes its own audio clip with a pause
+    segments = _flatten_segments(segments)
+
+    # Preferred path: pydub with 600ms silence between sentences
     if PYDUB_AVAILABLE:
         try:
             return _generate_with_pydub(segments, lang_code, output_path)
         except Exception as e:
             print(f"[voice] pydub failed ({e}), falling back to simple gTTS.")
 
-    # Fallback: single gTTS call (no inter-segment pauses)
+    # Fallback: single gTTS call with language fallbacks
     full_text = " ".join(s for s in segments if s.strip())
     try:
         parent = os.path.dirname(output_path)
         if parent:
             os.makedirs(parent, exist_ok=True)
-        tts = gTTS(text=full_text, lang=lang_code, slow=False)
-        tts.save(output_path)
+        buf, effective_lang = _try_gtts(full_text, lang_code)
+        if buf is None:
+            return False, "Voice generation failed: no supported language found"
+        with open(output_path, "wb") as f:
+            f.write(buf.read())
         return True, output_path
     except Exception as e:
         return False, f"Voice generation failed: {str(e)}"

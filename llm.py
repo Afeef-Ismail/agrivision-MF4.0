@@ -8,30 +8,20 @@ import os
 import json
 import re
 
-# Human-readable language names used in the prompt instruction
-LANGUAGE_NAMES = {
-    "English":   "English",
-    "Hindi":     "Hindi (हिंदी)",
-    "Kannada":   "Kannada (ಕನ್ನಡ)",
-    "Malayalam": "Malayalam (മലയാളം)",
-    "Marathi":   "Marathi (मराठी)",
-    "Tamil":     "Tamil (தமிழ்)",
-}
-
 # Groq client imported inside get_recommendation() to avoid a top-level crash
 # if the package is not installed.
 
 
 def _build_prompt(crop: str, disease: str, severity: str, location: str,
-                  time_of_day: str, mode: str, language: str = "English") -> str:
+                  time_of_day: str, mode: str,
+                  neighbouring_risk: str = "") -> str:
     """
-    Builds a structured prompt that instructs the LLM to respond ONLY in JSON
-    and in the farmer's chosen language.
+    Builds a structured prompt that instructs the LLM to respond ONLY in JSON (English).
+    Translation to the farmer's language is handled by app.py after this call.
 
     - JSON schema is fixed so _parse_llm_response() can reliably parse it
     - mode controls organic vs chemical treatment suggestions
-    - language tells the model to write all text values in the target language
-      so gTTS can speak them correctly
+    - neighbouring_risk provides static disease-spread context as extra LLM input
     """
     mode_instruction = (
         "Use only ORGANIC treatments (neem oil, copper fungicide, compost teas, biological controls)."
@@ -39,15 +29,11 @@ def _build_prompt(crop: str, disease: str, severity: str, location: str,
         else "You may suggest CHEMICAL treatments (fungicides, pesticides, herbicides) as needed."
     )
 
-    lang_name = LANGUAGE_NAMES.get(language, "English")
-    lang_instruction = (
-        ""
-        if language == "English"
-        else (
-            f"\n\nIMPORTANT: Write ALL text values inside the JSON in {lang_name}. "
-            f"Every string in the arrays and every string value must be in {lang_name}. "
-            "The JSON keys must stay in English. Only the values must be translated."
-        )
+    risk_context = (
+        f"\nNeighbouring crop risk context (use this to inform your neighbouring_crop_risk field): "
+        f"{neighbouring_risk}"
+        if neighbouring_risk
+        else ""
     )
 
     prompt = f"""You are an expert agronomist advising an Indian farmer.
@@ -57,7 +43,7 @@ Disease Detected: {disease}
 Severity: {severity if severity else "None (Healthy plant)"}
 Farm Location: {location}
 Time of Day: {time_of_day}
-Treatment Mode: {mode_instruction}
+Treatment Mode: {mode_instruction}{risk_context}
 
 Provide a complete disease management plan. Respond ONLY with valid JSON — no preamble, no explanation, no markdown, no extra text.
 
@@ -70,7 +56,7 @@ Return exactly this JSON structure:
   "neighbouring_crop_risk": "one sentence about risk to nearby crops"
 }}
 
-Keep each item concise and practical. Tailor advice to Indian farming conditions.{lang_instruction}"""
+Keep each item concise and practical. Tailor advice to Indian farming conditions. Respond in English."""
 
     return prompt
 
@@ -95,9 +81,11 @@ def _parse_llm_response(response_text: str) -> dict:
 
 
 def get_recommendation(crop: str, disease: str, severity: str, location: str,
-                       time_of_day: str, mode: str, language: str = "English") -> dict:
+                       time_of_day: str, mode: str,
+                       neighbouring_risk: str = "") -> dict:
     """
     Generates a structured agronomic recommendation for the detected disease.
+    Always returns English — app.py handles translation to the farmer's language.
 
     Uses Groq (llama-3.1-8b-instant) for all generated recommendations.
     If Groq fails (network error, rate limit, missing key), returns a safe
@@ -110,13 +98,14 @@ def get_recommendation(crop: str, disease: str, severity: str, location: str,
         location: e.g. "Mangalore, Karnataka"
         time_of_day: "morning", "afternoon", or "evening"
         mode: "organic" or "chemical"
-        language: voice language selected by the farmer (default "English")
+        neighbouring_risk: disease spread context from disease_info.py
 
     Returns:
         Dict with keys: immediate_actions, treatment, recovery_time,
         preventive_measures, neighbouring_crop_risk
     """
-    prompt = _build_prompt(crop, disease, severity, location, time_of_day, mode, language)
+    prompt = _build_prompt(crop, disease, severity, location, time_of_day, mode,
+                           neighbouring_risk)
 
     groq_api_key = os.getenv("GROQ_API_KEY")
     if groq_api_key:
