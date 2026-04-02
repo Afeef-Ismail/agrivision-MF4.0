@@ -224,10 +224,10 @@
     <!-- ===== DOWNLOAD REPORT BUTTONS ===== -->
     <!-- Hidden until a successful prediction — shown by displayResults() -->
     <div id="download-buttons" class="hidden" style="text-align:center; margin: 10px 0 20px;">
-        <button onclick="downloadReport('txt')" style="margin:6px 8px; padding:10px 22px; background:#2d8a4e; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
+        <button id="btn-download-txt" onclick="downloadReport('txt')" style="margin:6px 8px; padding:10px 22px; background:#2d8a4e; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
             📄 Download TXT Report
         </button>
-        <button onclick="downloadReport('pdf')" style="margin:6px 8px; padding:10px 22px; background:#1a5e35; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
+        <button id="btn-download-pdf" onclick="downloadReport('pdf')" style="margin:6px 8px; padding:10px 22px; background:#1a5e35; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
             📑 Download PDF Report
         </button>
     </div>
@@ -310,7 +310,9 @@
             voicePlaceholder:"Voice output will appear here after analysis.",
             tapPlay:"Tap play to hear the advisory",
             confidence:"Confidence", healthy:"Healthy", severity:"Severity",
-            tempLabel:"Temp °C", humidityLabel:"Humidity %", windLabel:"Wind km/h", conditionLabel:"Condition"
+            tempLabel:"Temp °C", humidityLabel:"Humidity %", windLabel:"Wind km/h", conditionLabel:"Condition",
+            tomato:"Tomato", apple:"Apple", grape:"Grape",
+            downloadTxt:"📄 Download TXT Report", downloadPdf:"📑 Download PDF Report"
         },
         "Hindi": {
             uploadTitle:"📷 पत्ती की फोटो अपलोड करें", clickUpload:"<strong>अपलोड करने के लिए क्लिक करें</strong> या खींचकर छोड़ें",
@@ -329,7 +331,9 @@
             voicePlaceholder:"विश्लेषण के बाद आवाज़ यहाँ सुनाई देगी।",
             tapPlay:"सलाह सुनने के लिए प्ले दबाएं",
             confidence:"विश्वास", healthy:"स्वस्थ", severity:"गंभीरता",
-            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"हवा km/h", conditionLabel:"मौसम"
+            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"हवा km/h", conditionLabel:"मौसम",
+            tomato:"टमाटर", apple:"सेब", grape:"अंगूर",
+            downloadTxt:"📄 TXT रिपोर्ट डाउनलोड करें", downloadPdf:"📑 PDF रिपोर्ट डाउनलोड करें"
         },
         "Kannada": {
             uploadTitle:"📷 ಎಲೆಯ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ", clickUpload:"<strong>ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ</strong> ಅಥವಾ ಎಳೆದು ಬಿಡಿ",
@@ -348,7 +352,9 @@
             voicePlaceholder:"ವಿಶ್ಲೇಷಣೆ ನಂತರ ಧ್ವನಿ ಸಲಹೆ ಇಲ್ಲಿ ಬರುತ್ತದೆ.",
             tapPlay:"ಸಲಹೆ ಕೇಳಲು ಪ್ಲೇ ಒತ್ತಿ",
             confidence:"ವಿಶ್ವಾಸ", healthy:"ಆರೋಗ್ಯಕರ", severity:"ತೀವ್ರತೆ",
-            tempLabel:"ತಾಪಮಾನ °C", humidityLabel:"ತೇವಾಂಶ %", windLabel:"ಗಾಳಿ km/h", conditionLabel:"ಹವಾಮಾನ"
+            tempLabel:"ತಾಪಮಾನ °C", humidityLabel:"ತೇವಾಂಶ %", windLabel:"ಗಾಳಿ km/h", conditionLabel:"ಹವಾಮಾನ",
+            tomato:"ಟೊಮ್ಯಾಟೋ", apple:"ಸೇಬು", grape:"ದ್ರಾಕ್ಷಿ",
+            downloadTxt:"📄 TXT ವರದಿ ಡೌನ್‌ಲೋಡ್", downloadPdf:"📑 PDF ವರದಿ ಡೌನ್‌ಲೋಡ್"
         },
         "Malayalam": {
             uploadTitle:"📷 ഇല ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക", clickUpload:"<strong>അപ്‌ലോഡ് ചെയ്യാൻ ക്ലിക്ക് ചെയ്യുക</strong> അല്ലെങ്കിൽ വലിച്ചിടുക",
@@ -367,7 +373,9 @@
             voicePlaceholder:"പരിശോധനയ്ക്ക് ശേഷം ശബ്ദ ഉപദേശം ഇവിടെ വരും.",
             tapPlay:"ഉപദേശം കേൾക്കാൻ പ്ലേ അമർത്തുക",
             confidence:"ആത്മവിശ്വാസം", healthy:"ആരോഗ്യകരം", severity:"കാഠിന്യം",
-            tempLabel:"താപനില °C", humidityLabel:"ആർദ്രത %", windLabel:"കാറ്റ് km/h", conditionLabel:"കാലാവസ്ഥ"
+            tempLabel:"താപനില °C", humidityLabel:"ആർദ്രത %", windLabel:"കാറ്റ് km/h", conditionLabel:"കാലാവസ്ഥ",
+            tomato:"തക്കാളി", apple:"ആപ്പിൾ", grape:"മുന്തിരി",
+            downloadTxt:"📄 TXT റിപ്പോർട്ട് ഡൗൺലോഡ്", downloadPdf:"📑 PDF റിപ്പോർട്ട് ഡൗൺലോഡ്"
         },
         "Marathi": {
             uploadTitle:"📷 पानाचा फोटो अपलोड करा", clickUpload:"<strong>अपलोड करण्यासाठी क्लिक करा</strong> किंवा ड्रॅग करा",
@@ -386,7 +394,9 @@
             voicePlaceholder:"विश्लेषणानंतर आवाज सल्ला येथे येईल.",
             tapPlay:"सल्ला ऐकण्यासाठी प्ले दाबा",
             confidence:"विश्वास", healthy:"निरोगी", severity:"तीव्रता",
-            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"वारा km/h", conditionLabel:"हवामान"
+            tempLabel:"तापमान °C", humidityLabel:"आर्द्रता %", windLabel:"वारा km/h", conditionLabel:"हवामान",
+            tomato:"टोमॅटो", apple:"सफरचंद", grape:"द्राक्ष",
+            downloadTxt:"📄 TXT अहवाल डाउनलोड करा", downloadPdf:"📑 PDF अहवाल डाउनलोड करा"
         },
         "Tamil": {
             uploadTitle:"📷 இலை புகைப்படம் பதிவேற்றவும்", clickUpload:"<strong>பதிவேற்ற கிளிக் செய்யவும்</strong> அல்லது இழுத்து விடவும்",
@@ -405,7 +415,114 @@
             voicePlaceholder:"பரிசோதனைக்குப் பின் குரல் ஆலோசனை இங்கே வரும்.",
             tapPlay:"ஆலோசனை கேட்க ப்ளே அழுத்தவும்",
             confidence:"நம்பகத்தன்மை", healthy:"ஆரோக்கியமானது", severity:"தீவிரம்",
-            tempLabel:"வெப்பநிலை °C", humidityLabel:"ஈரப்பதம் %", windLabel:"காற்று km/h", conditionLabel:"வானிலை"
+            tempLabel:"வெப்பநிலை °C", humidityLabel:"ஈரப்பதம் %", windLabel:"காற்று km/h", conditionLabel:"வானிலை",
+            tomato:"தக்காளி", apple:"ஆப்பிள்", grape:"திராட்சை",
+            downloadTxt:"📄 TXT அறிக்கை பதிவிறக்கம்", downloadPdf:"📑 PDF அறிக்கை பதிவிறக்கம்"
+        },
+        "Bengali": {
+            uploadTitle:"📷 পাতার ছবি আপলোড করুন", clickUpload:"<strong>আপলোড করতে ক্লিক করুন</strong> অথবা টেনে ছেড়ে দিন",
+            cropType:"🌱 ফসলের ধরন", farmLocation:"📍 খামারের অবস্থান", locationPlaceholder:"যেমন: মঙ্গালোর, কর্ণাটক",
+            voiceLanguage:"🔊 কণ্ঠস্বর ভাষা", treatmentMode:"💊 চিকিৎসার পদ্ধতি",
+            organic:"🌿 জৈব", chemical:"🧪 রাসায়নিক",
+            analyzeBtn:"🔍 ফসল বিশ্লেষণ করুন", analyzingBtn:"⏳ বিশ্লেষণ হচ্ছে...",
+            diagnosisTitle:"🩺 রোগ নির্ণয়ের ফলাফল",
+            uploadPrompt:"পাতার ছবি আপলোড করুন এবং দেখতে <strong>ফসল বিশ্লেষণ করুন</strong> ক্লিক করুন।",
+            analyzingText:"আপনার ফসল বিশ্লেষণ করা হচ্ছে...",
+            treatmentTitle:"📋 চিকিৎসার সুপারিশ",
+            recPlaceholder:"ছবি আপলোড করার পরে বিশ্লেষণের ফলাফল এখানে দেখা যাবে।",
+            immediateActions:"⚡ তাৎক্ষণিক পদক্ষেপ", treatmentHeading:"💊 চিকিৎসা",
+            recoveryTime:"⏱ সুস্থ হওয়ার সময়", prevention:"🛡 প্রতিরোধমূলক ব্যবস্থা",
+            sprayTiming:"🌤 স্প্রে করার সময়", voiceAdvisory:"🔊 কণ্ঠ পরামর্শ",
+            voicePlaceholder:"বিশ্লেষণের পরে কণ্ঠ পরামর্শ এখানে আসবে।",
+            tapPlay:"পরামর্শ শুনতে প্লে চাপুন",
+            confidence:"আস্থা", healthy:"সুস্থ", severity:"তীব্রতা",
+            tempLabel:"তাপমাত্রা °C", humidityLabel:"আর্দ্রতা %", windLabel:"বায়ু km/h", conditionLabel:"আবহাওয়া",
+            tomato:"টমেটো", apple:"আপেল", grape:"আঙ্গুর",
+            downloadTxt:"📄 TXT রিপোর্ট ডাউনলোড করুন", downloadPdf:"📑 PDF রিপোর্ট ডাউনলোড করুন"
+        },
+        "Gujarati": {
+            uploadTitle:"📷 પાંદડાની છબી અપલોડ કરો", clickUpload:"<strong>અપલોડ કરવા ક્લિક કરો</strong> અથવા ખેંચો અને છોડો",
+            cropType:"🌱 પાકનો પ્રકાર", farmLocation:"📍 ખેતરનું સ્થળ", locationPlaceholder:"દા.ત.: મંગળૂર, કર્ણાટક",
+            voiceLanguage:"🔊 અવાજ ભાષા", treatmentMode:"💊 સારવાર પદ્ધતિ",
+            organic:"🌿 જૈવ", chemical:"🧪 રાસાયણિક",
+            analyzeBtn:"🔍 પાકનું વિશ્લેષણ કરો", analyzingBtn:"⏳ વિશ્લેષણ થઈ રહ્યું છે...",
+            diagnosisTitle:"🩺 નિદાન પરિણામ",
+            uploadPrompt:"પાંદડાની છબી અપલોડ કરો અને જોવા માટે <strong>પાકનું વિશ્લેષણ કરો</strong> ક્લિક કરો.",
+            analyzingText:"તમારા પાકનું વિશ્લેષણ થઈ રહ્યું છે...",
+            treatmentTitle:"📋 સારવારની ભલામણ",
+            recPlaceholder:"છબી અપલોડ કર્યા પછી વિશ્લેષણ પરિણામ અહીં દેખાશે.",
+            immediateActions:"⚡ તાત્કાલિક પગલાં", treatmentHeading:"💊 સારવાર",
+            recoveryTime:"⏱ સ્વસ્થ થવાનો સમય", prevention:"🛡 નિવારક પગલાં",
+            sprayTiming:"🌤 છંટકાવ સમય", voiceAdvisory:"🔊 અવાજ સલાહ",
+            voicePlaceholder:"વિશ્લેષણ પછી અવાજ સલાહ અહીં આવશે.",
+            tapPlay:"સલાહ સાંભળવા પ્લે દબાવો",
+            confidence:"વિશ્વાસ", healthy:"સ્વસ્થ", severity:"ગંભીરતા",
+            tempLabel:"તાપમાન °C", humidityLabel:"ભેજ %", windLabel:"પવન km/h", conditionLabel:"હવામાન",
+            tomato:"ટામેટા", apple:"સફરજન", grape:"દ્રાક્ષ",
+            downloadTxt:"📄 TXT રિપોર્ટ ડાઉનલોડ", downloadPdf:"📑 PDF રિપોર્ટ ડાઉનલોડ"
+        },
+        "Odia": {
+            uploadTitle:"📷 ପତ୍ରର ଛବି ଅପଲୋଡ୍ କରନ୍ତୁ", clickUpload:"<strong>ଅପଲୋଡ୍ ପାଇଁ କ୍ଲିକ୍ କରନ୍ତୁ</strong> ଅଥବା ଟାଣି ଛାଡ଼ନ୍ତୁ",
+            cropType:"🌱 ଫସଲର ପ୍ରକାର", farmLocation:"📍 ଚାଷ ଜମିର ସ୍ଥାନ", locationPlaceholder:"ଯଥା: ମଙ୍ଗଳୂର, କର୍ଣ୍ଣାଟକ",
+            voiceLanguage:"🔊 ଭୋଇସ୍ ଭାଷା", treatmentMode:"💊 ଚିକିତ୍ସା ପ୍ରଣାଳୀ",
+            organic:"🌿 ଜୈବ", chemical:"🧪 ରାସାୟନିକ",
+            analyzeBtn:"🔍 ଫସଲ ବିଶ୍ଳେଷଣ କରନ୍ତୁ", analyzingBtn:"⏳ ବିଶ୍ଳେଷଣ ହେଉଛି...",
+            diagnosisTitle:"🩺 ରୋଗ ନିରୂପଣ ଫଳାଫଳ",
+            uploadPrompt:"ପତ୍ରର ଛବି ଅପଲୋଡ୍ କରନ୍ତୁ ଏବଂ ଦେଖିବାକୁ <strong>ଫସଲ ବିଶ୍ଳେଷଣ କରନ୍ତୁ</strong> କ୍ଲିକ୍ କରନ୍ତୁ।",
+            analyzingText:"ଆପଣଙ୍କ ଫସଲ ବିଶ୍ଳେଷଣ ହେଉଛି...",
+            treatmentTitle:"📋 ଚିକିତ୍ସାର ସୁପାରିଶ",
+            recPlaceholder:"ଛବି ଅପଲୋଡ୍ ପରେ ବିଶ୍ଳେଷଣ ଫଳାଫଳ ଏଠାରେ ଦେଖାଯିବ।",
+            immediateActions:"⚡ ତୁରନ୍ତ ପଦକ୍ଷେପ", treatmentHeading:"💊 ଚିକିତ୍ସା",
+            recoveryTime:"⏱ ସୁସ୍ଥ ହେବାର ସମୟ", prevention:"🛡 ପ୍ରତିରୋଧ ପଦକ୍ଷେପ",
+            sprayTiming:"🌤 ସ୍ପ୍ରେ ସମୟ", voiceAdvisory:"🔊 ଭୋଇସ୍ ପରାମର୍ଶ",
+            voicePlaceholder:"ବିଶ୍ଳେଷଣ ପରେ ଭୋଇସ୍ ପରାମର୍ଶ ଏଠାରେ ଆସିବ।",
+            tapPlay:"ପରାମର୍ଶ ଶୁଣିବାକୁ ପ୍ଲେ ଦବାନ୍ତୁ",
+            confidence:"ଆତ୍ମବିଶ୍ୱାସ", healthy:"ସ୍ୱସ୍ଥ", severity:"ଗୁରୁତ୍ୱ",
+            tempLabel:"ତାପମାତ୍ରା °C", humidityLabel:"ଆର୍ଦ୍ରତା %", windLabel:"ବାୟୁ km/h", conditionLabel:"ପାଣିପାଗ",
+            tomato:"ଟମାଟୋ", apple:"ଆପଲ", grape:"ଅଙ୍ଗୁର",
+            downloadTxt:"📄 TXT ରିପୋର୍ଟ ଡାଉନଲୋଡ", downloadPdf:"📑 PDF ରିପୋର୍ଟ ଡାଉନଲୋଡ"
+        },
+        "Punjabi": {
+            uploadTitle:"📷 ਪੱਤੇ ਦੀ ਫੋਟੋ ਅਪਲੋਡ ਕਰੋ", clickUpload:"<strong>ਅਪਲੋਡ ਕਰਨ ਲਈ ਕਲਿੱਕ ਕਰੋ</strong> ਜਾਂ ਖਿੱਚ ਕੇ ਛੱਡੋ",
+            cropType:"🌱 ਫ਼ਸਲ ਦੀ ਕਿਸਮ", farmLocation:"📍 ਖੇਤ ਦਾ ਸਥਾਨ", locationPlaceholder:"ਜਿਵੇਂ: ਮੰਗਲੂਰ, ਕਰਨਾਟਕ",
+            voiceLanguage:"🔊 ਆਵਾਜ਼ ਦੀ ਭਾਸ਼ਾ", treatmentMode:"💊 ਇਲਾਜ ਦਾ ਤਰੀਕਾ",
+            organic:"🌿 ਜੈਵਿਕ", chemical:"🧪 ਰਸਾਇਣਕ",
+            analyzeBtn:"🔍 ਫ਼ਸਲ ਦੀ ਜਾਂਚ ਕਰੋ", analyzingBtn:"⏳ ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ...",
+            diagnosisTitle:"🩺 ਰੋਗ ਨਿਰਧਾਰਨ ਨਤੀਜਾ",
+            uploadPrompt:"ਪੱਤੇ ਦੀ ਫੋਟੋ ਅਪਲੋਡ ਕਰੋ ਅਤੇ ਦੇਖਣ ਲਈ <strong>ਫ਼ਸਲ ਦੀ ਜਾਂਚ ਕਰੋ</strong> ਕਲਿੱਕ ਕਰੋ।",
+            analyzingText:"ਤੁਹਾਡੀ ਫ਼ਸਲ ਦੀ ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ...",
+            treatmentTitle:"📋 ਇਲਾਜ ਦੀ ਸਿਫਾਰਸ਼",
+            recPlaceholder:"ਫੋਟੋ ਅਪਲੋਡ ਕਰਨ ਤੋਂ ਬਾਅਦ ਵਿਸ਼ਲੇਸ਼ਣ ਨਤੀਜੇ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।",
+            immediateActions:"⚡ ਤੁਰੰਤ ਕਦਮ", treatmentHeading:"💊 ਇਲਾਜ",
+            recoveryTime:"⏱ ਠੀਕ ਹੋਣ ਦਾ ਸਮਾਂ", prevention:"🛡 ਰੋਕਥਾਮ ਦੇ ਉਪਾਅ",
+            sprayTiming:"🌤 ਛਿੜਕਾਅ ਦਾ ਸਮਾਂ", voiceAdvisory:"🔊 ਆਵਾਜ਼ ਸਲਾਹ",
+            voicePlaceholder:"ਜਾਂਚ ਤੋਂ ਬਾਅਦ ਆਵਾਜ਼ ਸਲਾਹ ਇੱਥੇ ਆਵੇਗੀ।",
+            tapPlay:"ਸਲਾਹ ਸੁਣਨ ਲਈ ਪਲੇ ਦਬਾਓ",
+            confidence:"ਭਰੋਸਾ", healthy:"ਸਿਹਤਮੰਦ", severity:"ਗੰਭੀਰਤਾ",
+            tempLabel:"ਤਾਪਮਾਨ °C", humidityLabel:"ਨਮੀ %", windLabel:"ਹਵਾ km/h", conditionLabel:"ਮੌਸਮ",
+            tomato:"ਟਮਾਟਰ", apple:"ਸੇਬ", grape:"ਅੰਗੂਰ",
+            downloadTxt:"📄 TXT ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ", downloadPdf:"📑 PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ"
+        },
+        "Telugu": {
+            uploadTitle:"📷 ఆకు యొక్క ఫోటో అప్‌లోడ్ చేయండి", clickUpload:"<strong>అప్‌లోడ్ చేయడానికి క్లిక్ చేయండి</strong> లేదా లాగి వదలండి",
+            cropType:"🌱 పంట రకం", farmLocation:"📍 వ్యవసాయ భూమి స్థానం", locationPlaceholder:"ఉదా: మంగళూరు, కర్ణాటక",
+            voiceLanguage:"🔊 వాయిస్ భాష", treatmentMode:"💊 చికిత్స పద్ధతి",
+            organic:"🌿 సేంద్రీయ", chemical:"🧪 రసాయన",
+            analyzeBtn:"🔍 పంటను విశ్లేషించండి", analyzingBtn:"⏳ విశ్లేషిస్తోంది...",
+            diagnosisTitle:"🩺 వ్యాధి నిర్ధారణ ఫలితం",
+            uploadPrompt:"ఆకు ఫోటో అప్‌లోడ్ చేసి చూడడానికి <strong>పంటను విశ్లేషించండి</strong> క్లిక్ చేయండి.",
+            analyzingText:"మీ పంటను విశ్లేషిస్తోంది...",
+            treatmentTitle:"📋 చికిత్స సిఫార్సు",
+            recPlaceholder:"ఫోటో అప్‌లోడ్ చేసిన తర్వాత విశ్లేషణ ఫలితాలు ఇక్కడ కనిపిస్తాయి.",
+            immediateActions:"⚡ తక్షణ చర్యలు", treatmentHeading:"💊 చికిత్స",
+            recoveryTime:"⏱ కోలుకునే సమయం", prevention:"🛡 నివారణ చర్యలు",
+            sprayTiming:"🌤 స్ప్రే సమయం", voiceAdvisory:"🔊 వాయిస్ సలహా",
+            voicePlaceholder:"విశ్లేషణ తర్వాత వాయిస్ సలహా ఇక్కడ వస్తుంది.",
+            tapPlay:"సలహా వినడానికి ప్లే నొక్కండి",
+            confidence:"విశ్వాసం", healthy:"ఆరోగ్యకరం", severity:"తీవ్రత",
+            tempLabel:"ఉష్ణోగ్రత °C", humidityLabel:"తేమ %", windLabel:"గాలి km/h", conditionLabel:"వాతావరణం",
+            tomato:"టమాట", apple:"యాపిల్", grape:"ద్రాక్ష",
+            downloadTxt:"📄 TXT నివేదిక డౌన్‌లోడ్", downloadPdf:"📑 PDF నివేదిక డౌన్‌లోడ్"
         }
     };
 
@@ -467,6 +584,20 @@
             statLabels[2].textContent = t.windLabel;
             statLabels[3].textContent = t.conditionLabel;
         }
+
+        // Crop type dropdown options (value stays English for backend; text changes)
+        const cropSelect = document.getElementById("crop-type");
+        if (cropSelect) {
+            cropSelect.options[0].text = t.tomato;
+            cropSelect.options[1].text = t.apple;
+            cropSelect.options[2].text = t.grape;
+        }
+
+        // Download report buttons
+        const btnTxt = document.getElementById("btn-download-txt");
+        const btnPdf = document.getElementById("btn-download-pdf");
+        if (btnTxt) btnTxt.textContent = t.downloadTxt;
+        if (btnPdf) btnPdf.textContent = t.downloadPdf;
     }
 
     // Apply translations whenever language selector changes

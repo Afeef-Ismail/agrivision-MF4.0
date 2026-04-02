@@ -117,6 +117,11 @@ def startup_event():
 
 # --- Routes ---
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Suppress browser favicon 404 requests."""
+    return Response(status_code=204)
+
 @app.get("/")
 async def serve_index(request: Request):
     """Serves the main single-page frontend (index.html)."""
