@@ -16,7 +16,7 @@ load_dotenv()
 
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
@@ -34,6 +34,7 @@ from llm import get_recommendation
 from voice import generate_voice, LANGUAGE_CODES
 from weather import get_spray_timing
 from gps_validator import get_gps_warning
+from report_generator import generate_txt_report, generate_pdf_report
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +313,7 @@ async def predict_endpoint(
         #   data.audio_url / data.gps_info
         return JSONResponse(content={
             "success": True,
+            "crop_type": crop_type,          # included so the report knows the crop
             "prediction": {
                 "disease_display": disease_display_translated,
                 "confidence": confidence,
@@ -337,3 +339,66 @@ async def predict_endpoint(
                 "error": f"An unexpected error occurred: {str(e)}"
             }
         )
+
+
+@app.post("/download/txt")
+async def download_txt(data: dict):
+    """
+    Generates and returns a plain-text crop disease report as a file download.
+
+    Accepts the full prediction response dict (as JSON body) that the frontend
+    stores after a successful /predict call. Streams the report back with
+    Content-Disposition: attachment so the browser triggers a Save dialog.
+
+    Args:
+        data: prediction response dict (crop_type, prediction, severity,
+              recommendation, weather, gps_info)
+    """
+    try:
+        txt = generate_txt_report(data)
+        return Response(
+            content=txt.encode("utf-8"),
+            media_type="text/plain; charset=utf-8",
+            headers={"Content-Disposition": "attachment; filename=agrivision_report.txt"}
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/download/pdf")
+async def download_pdf(data: dict):
+    """
+    Generates and returns a PDF crop disease report as a file download.
+
+    Writes the PDF to a temporary path inside static/reports/, returns it as
+    a FileResponse (which FastAPI streams with proper headers), then schedules
+    the file for deletion via a background task to keep the directory clean.
+
+    Args:
+        data: prediction response dict (same shape as /download/txt)
+    """
+    import uuid
+    from starlette.background import BackgroundTask
+
+    try:
+        reports_dir = Path("static/reports")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
+        pdf_path = str(reports_dir / f"report_{uuid.uuid4().hex[:8]}.pdf")
+        generate_pdf_report(data, pdf_path)
+
+        # Delete the temp PDF file after it has been streamed to the client
+        def _cleanup(path: str):
+            try:
+                os.remove(path)
+            except Exception:
+                pass
+
+        return FileResponse(
+            path=pdf_path,
+            media_type="application/pdf",
+            filename="agrivision_report.pdf",
+            background=BackgroundTask(_cleanup, pdf_path)
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})

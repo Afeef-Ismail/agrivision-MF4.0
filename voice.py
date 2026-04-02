@@ -24,8 +24,27 @@ from gtts import gTTS
 GTTS_SUPPORTED = ['en', 'hi', 'pa', 'gu', 'bn', 'or', 'te', 'kn', 'ml', 'mr', 'ta']
 
 # pydub is used for inter-segment silence. Requires ffmpeg to be installed.
+# imageio-ffmpeg bundles a static ffmpeg binary so no system install is needed.
+# We point pydub's converter/ffprobe at it immediately after import.
 # Gracefully degraded: if not available, the app still generates audio —
 # just without pauses between each spoken point.
+# Ensure pydub can find ffmpeg/ffprobe BEFORE importing AudioSegment so pydub's
+# import-time which() check passes cleanly.
+# winget installs to a per-user path not yet on PATH until the shell is restarted;
+# we inject it proactively so the server works immediately after install.
+_FFMPEG_CANDIDATES = [
+    # winget (Gyan.FFmpeg) — standard install path on Windows
+    r"C:\Users\afeef\AppData\Local\Microsoft\WinGet\Packages"
+    r"\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1-full_build\bin",
+    r"C:\ProgramData\chocolatey\bin",   # Chocolatey
+    r"C:\ffmpeg\bin",                   # common manual install
+    r"C:\Program Files\ffmpeg\bin",
+]
+for _candidate in _FFMPEG_CANDIDATES:
+    if os.path.exists(os.path.join(_candidate, "ffprobe.exe")):
+        os.environ["PATH"] = _candidate + os.pathsep + os.environ.get("PATH", "")
+        break
+
 try:
     from pydub import AudioSegment
     PYDUB_AVAILABLE = True

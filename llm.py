@@ -56,7 +56,8 @@ Return exactly this JSON structure:
   "neighbouring_crop_risk": "one sentence about risk to nearby crops"
 }}
 
-Keep each item concise and practical. Tailor advice to Indian farming conditions. Respond in English."""
+Keep each item concise and practical. Tailor advice to Indian farming conditions. Respond in English.
+Every string value — including each item in the arrays and both single-string fields — MUST end with a full stop (period). This is required for natural text-to-speech pacing."""
 
     return prompt
 

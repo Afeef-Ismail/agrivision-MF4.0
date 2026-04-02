@@ -215,12 +215,21 @@
             <p class="audio-placeholder" id="audio-placeholder">
                 Voice output will appear here after analysis.
             </p>
-            <!-- Seekable audio player — full controls: play/pause, scrub bar, volume -->
-            <audio id="voicePlayer" controls style="width:100%" class="hidden">
-                <source id="voiceSource" src="" type="audio/mpeg">
-            </audio>
+            <!-- Seekable audio player — src set directly on <audio> for reliable seeking -->
+            <audio id="voicePlayer" controls style="width:100%" class="hidden" preload="auto"></audio>
             <span class="audio-label hidden" id="audio-label">Tap play to hear the advisory</span>
         </div>
+    </div>
+
+    <!-- ===== DOWNLOAD REPORT BUTTONS ===== -->
+    <!-- Hidden until a successful prediction — shown by displayResults() -->
+    <div id="download-buttons" class="hidden" style="text-align:center; margin: 10px 0 20px;">
+        <button onclick="downloadReport('txt')" style="margin:6px 8px; padding:10px 22px; background:#2d8a4e; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
+            📄 Download TXT Report
+        </button>
+        <button onclick="downloadReport('pdf')" style="margin:6px 8px; padding:10px 22px; background:#1a5e35; color:#fff; border:none; border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;">
+            📑 Download PDF Report
+        </button>
     </div>
 
 </div><!-- end .main-container -->
@@ -666,15 +675,16 @@
             gpsBanner.classList.add("hidden");
         }
 
-        // 6. Audio player — seekable player with autoplay
+        // 6. Audio player — set src directly on <audio> for reliable seeking
         const audioUrl = data.audio_url;
         const voicePlayer = document.getElementById("voicePlayer");
-        const voiceSource = document.getElementById("voiceSource");
         const audioPlaceholder = document.getElementById("audio-placeholder");
         const audioLabel = document.getElementById("audio-label");
 
         if (audioUrl) {
-            voiceSource.src = audioUrl;
+            // Setting src directly (not via <source>) ensures the browser
+            // sends a Range request and enables the scrub bar
+            voicePlayer.src = audioUrl;
             voicePlayer.load();
             voicePlayer.classList.remove("hidden");
             audioLabel.classList.remove("hidden");
@@ -684,6 +694,12 @@
                 // Browser may block autoplay — user can still press play manually
             });
         }
+
+        // 7. Download buttons — show after successful prediction
+        document.getElementById("download-buttons").classList.remove("hidden");
+
+        // Store the full result so download handlers can POST it
+        window._lastResult = data;
     }
 
     // ---- Helper: populate a <ul> with <li> items ----
@@ -710,6 +726,7 @@
 
         document.getElementById("weather-panel").classList.add("hidden");
         document.getElementById("risk-banner").classList.add("hidden");
+        document.getElementById("download-buttons").classList.add("hidden");
 
         document.getElementById("analyze-btn").disabled = true;
         document.getElementById("analyze-btn").textContent = "⏳ Analyzing...";
@@ -725,6 +742,30 @@
 
         document.getElementById("analyze-btn").disabled = false;
         document.getElementById("analyze-btn").textContent = "🔍 Analyze Crop";
+    }
+
+    // ---- Report Download ----
+    // POSTs the stored prediction result to the server and triggers a browser download.
+    // Uses a temporary <a> element with an object URL so no new tab opens.
+    async function downloadReport(fmt) {
+        if (!window._lastResult) return;
+        try {
+            const resp = await fetch(`/download/${fmt}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(window._lastResult)
+            });
+            if (!resp.ok) { alert("Report generation failed."); return; }
+            const blob = await resp.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = `agrivision_report.${fmt}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert("Could not download report: " + e.message);
+        }
     }
 
     // Re-enable button when loading is done (called from displayResults)
