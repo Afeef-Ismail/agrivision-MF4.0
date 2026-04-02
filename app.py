@@ -282,6 +282,10 @@ async def predict_endpoint(
             neighbouring_risk=neighbouring_risk   # feeds disease spread context into the prompt
         )
 
+        # Healthy plants have no disease — suppress recovery_time the LLM still generates
+        if not severity:
+            recommendation["recovery_time"] = ""
+
         # --- Step 8: Weather & Spray Timing ---
         # Done BEFORE voice so the translated advice can be spoken in the audio.
         lang_code = LANGUAGE_CODES.get(language, "en")
