@@ -30,6 +30,9 @@ temp/
 # Model weights and big files
 model/*.h5
 
+# Downloaded Noto Sans fonts (auto-fetched at startup, not committed)
+fonts/
+
 # Setup or deployment scripts that should remain local
 setup.sh
 

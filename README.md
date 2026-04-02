@@ -16,6 +16,7 @@ AgriVision is a FastAPI-based web application that detects crop diseases from le
 - 🌤 **Spray timing advisor** — real-time weather from OpenWeatherMap
 - ⚠️ **Neighbouring crop risk** — alerts about disease spread to nearby fields
 - 📍 **GPS validation** — EXIF-based farm region check (no external API)
+- 🎥 **YouTube Treatment Guide** — one-click access to Hindi farming tutorial videos for the detected disease (no API key required)
 
 ---
 

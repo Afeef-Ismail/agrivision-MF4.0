@@ -232,6 +232,21 @@
         </button>
     </div>
 
+    <!-- ===== YOUTUBE TREATMENT GUIDE ===== -->
+    <!-- Hidden until a successful prediction — shown by displayResults() -->
+    <div id="youtubeSection" style="display:none; margin-top:20px; text-align:center; padding-bottom:16px;">
+        <h3 style="color:#2d8a4e; margin-bottom:6px;">📹 Watch Treatment Guide</h3>
+        <p style="font-size:14px; color:#555; margin:0 0 8px;">
+            Hindi farming videos showing how to treat and prevent this disease
+        </p>
+        <a id="youtubeBtn" href="#" target="_blank"
+           style="display:inline-block; background:#2d8a4e; color:white;
+                  padding:12px 24px; border-radius:8px; text-decoration:none;
+                  font-size:16px;">
+            🎥 Watch on YouTube
+        </a>
+    </div>
+
 </div><!-- end .main-container -->
 
 
@@ -925,6 +940,12 @@
         // 7. Download buttons — show after successful prediction
         document.getElementById("download-buttons").classList.remove("hidden");
 
+        // 8. YouTube treatment guide link
+        if (data.youtube_url) {
+            document.getElementById("youtubeBtn").href = data.youtube_url;
+            document.getElementById("youtubeSection").style.display = "block";
+        }
+
         // Store the full result so download handlers can POST it
         window._lastResult = data;
     }
@@ -954,6 +975,7 @@
         document.getElementById("weather-panel").classList.add("hidden");
         document.getElementById("risk-banner").classList.add("hidden");
         document.getElementById("download-buttons").classList.add("hidden");
+        document.getElementById("youtubeSection").style.display = "none";
 
         document.getElementById("analyze-btn").disabled = true;
         document.getElementById("analyze-btn").textContent = "⏳ Analyzing...";

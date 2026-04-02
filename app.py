@@ -30,7 +30,7 @@ from predict import load_model, predict_disease as run_prediction, is_model_load
 from validate import check_blur, check_confidence
 from severity import get_severity
 from disease_info import get_neighbouring_risk
-from llm import get_recommendation
+from llm import get_recommendation, get_youtube_search_url
 from voice import generate_voice, LANGUAGE_CODES
 from weather import get_spray_timing
 from gps_validator import get_gps_warning
@@ -310,7 +310,10 @@ async def predict_endpoint(
         # Return relative URL for the frontend audio player (/static/ is mounted above)
         audio_url = f"/static/audio/{audio_filename}" if voice_success else None
 
-        # --- Step 10: Return Final Response ---
+        # --- Step 10: YouTube treatment video search URL (no API, locally computed) ---
+        youtube_url = get_youtube_search_url(crop_type, disease_display)
+
+        # --- Step 11: Return Final Response ---
         # Shape matches displayResults() in index.html exactly:
         #   data.prediction.disease_display / data.prediction.confidence / data.prediction.warning
         #   data.severity.color / data.severity.level
@@ -331,7 +334,9 @@ async def predict_endpoint(
             "recommendation": recommendation,  # all text fields translated
             "weather": weather_data,           # advice already translated by weather.py
             "audio_url": audio_url,
-            "gps_info": gps_info_translated    # None | "✅ GPS: ..." | "⚠️ GPS Warning: ..."
+            "gps_info": gps_info_translated,   # None | "✅ GPS: ..." | "⚠️ GPS Warning: ..."
+            "location": location,              # farm location string for reports
+            "youtube_url": youtube_url         # locally computed YouTube search URL
             # neighbouring_risk removed from direct response — lives inside recommendation dict
         })
 

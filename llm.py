@@ -146,3 +146,22 @@ def get_recommendation(crop: str, disease: str, severity: str, location: str,
             "Monitor neighbouring crops for similar symptoms and take preventive action."
         )
     }
+
+
+def get_youtube_search_url(crop: str, disease: str) -> str:
+    """
+    Constructs a YouTube search URL for Hindi farming treatment videos.
+    No API key needed — just a direct search URL.
+    Completely free, no quota, no external service calls.
+
+    Args:
+        crop: e.g. "Tomato"
+        disease: e.g. "Late Blight"
+
+    Returns:
+        YouTube search URL string (hl=hi prioritises Hindi results)
+    """
+    query = f"{crop} {disease} treatment prevention farming"
+    encoded_query = query.replace(" ", "+")
+    # hl=hi sets YouTube interface to Hindi, results prioritize Hindi videos
+    return f"https://www.youtube.com/results?search_query={encoded_query}&hl=hi"
